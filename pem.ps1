@@ -11,10 +11,47 @@ function ToByte($stringValue)
   return $bytesValue
 }
 
-function EncodeLength($stream, $length)
+function EncodeIntegerBigEndian($stream, $value, $forceUnsigned)
 {
-   Write-Host($length)
-   Write-Host($stream)
+    $stream.Write([bye]0x02); // INTEGER
+    $prefixZeros = 0;
+    
+    for ($i = 0; i -lt $value; i++)
+    {
+        if ($value[$i] -ne 0) 
+        {
+            break
+        }
+        $prefixZeros++
+    }
+
+    if ($value.Length - $prefixZeros -eq 0)
+    {
+        EncodeLength $stream 1
+        stream.Write([byte]0)
+    }
+    else
+    {
+        if ($forceUnsigned -and $value[$prefixZeros] -gt 0x7f)
+        {
+            #Add a prefix zero to force unsigned if the MSB is 1
+            EncodeLength $stream ($value.Length - ($prefixZeros + 1))
+            $stream.Write([byte]0);
+        }
+        else
+        {
+            EncodeLength stream, $value.Length - $prefixZeros
+        }
+        for ($i = $prefixZeros; $i -lt $value.Length; $i++)
+        {
+            $stream.Write($value[$i]);
+        }
+    }
+}
+
+
+function EncodeLength($stream, $length)
+{  
 
    if ($length -lt 0x80)
    {     
